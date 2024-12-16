@@ -38,7 +38,7 @@ vector_store = initialize_vectorstore()
 retriever = vector_store.as_retriever()
 
 # ページ設定
-st.set_page_config(page_title="RAG Chatbot", layout="wide")
+st.set_page_config(page_title="耐火基準エキスパート", layout="wide")
 
 # Streamlit UI
 st.title("RAG Chatbot")
@@ -84,7 +84,19 @@ if user_input:
 # サイドバーに使い方の説明を追加
 with st.sidebar:
     st.markdown("### 使い方")
-    st.write("1. 質問を入力欄に入力してください")
-    st.write("2. 自動的に関連する文書を検索し、回答を生成します")
-    st.write("3. 回答は逐次的に表示されます")
-    st.write("4. 参照文書は折りたたみ形式で表示されます")
+    st.markdown("""
+    #### 基本的な使い方
+    1. 入力欄に知りたいことを質問として入力してください
+    2. Enterキーを押すと、AIが回答を生成します
+    3. AIの回答が文章として表示されます
+    4. 回答の下に、参考にした法令や規定が表示されます
+    
+    #### 質問のコツ
+    - 具体的に聞きたいことを明確に書くと、より正確な回答が得られます
+    - 複数の質問は分けて聞くと、より分かりやすい回答になります
+    
+    #### 例えば...
+    - 「3階建ての木造建築物の耐火基準について教えてください」
+    - 「避難階段の必要な条件を教えてください」
+    - 「防火区画の面積制限について教えてください」
+    """)
