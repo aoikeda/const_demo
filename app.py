@@ -24,6 +24,10 @@ index_name = "construction_laws"
 
 vector_store = initialize_vectorstore()
 retriever = vector_store.as_retriever()
+
+# ページ設定
+st.set_page_config(page_title="RAG Chatbot", layout="wide")
+
 # Streamlit UI
 st.title("RAG Chatbot")
 st.write("質問を入力してください。")
@@ -31,28 +35,36 @@ st.write("質問を入力してください。")
 # ユーザーからの入力を取得
 user_input = st.text_input("質問を入力してください:")
 
-
 # チャットボットの設定
 if user_input:
-    # QAチェーンの作成
-    qa_chain = RetrievalQA.from_chain_type(
-        llm=ChatOpenAI(
-            model_name="gpt-4o",
-            temperature=0
-        ),
-        chain_type="stuff",
-        retriever=retriever,
-        return_source_documents=True
-    )
+    with st.spinner('回答を生成中...'):
+        # QAチェーンの作成
+        qa_chain = RetrievalQA.from_chain_type(
+            llm=ChatOpenAI(
+                model_name="gpt-4o",
+                temperature=0
+            ),
+            chain_type="stuff",
+            retriever=retriever,
+            return_source_documents=True
+        )
 
-    # 質問を実行
-    response = qa_chain.invoke({"query": user_input})
-    
-    # 回答を表示
-    st.write("回答:", response['result'])
-    
-    # 参照された文書を表示
-    st.write("\n参照文書:")
-    for doc in response['source_documents']:
-        st.write("---")
-        st.write(doc.page_content)
+        # 質問を実行
+        response = qa_chain.invoke({"query": user_input})
+        
+        # 回答を表示
+        st.markdown("### 回答")
+        st.info(response['result'])
+        
+        # 参照された文書を表示
+        st.markdown("### 参照文書")
+        for i, doc in enumerate(response['source_documents'], 1):
+            with st.expander(f"参照文書 {i}"):
+                st.write(doc.page_content[:500] + "..." if len(doc.page_content) > 500 else doc.page_content)
+
+# サイドバーに使い方の説明を追加
+with st.sidebar:
+    st.markdown("### 使い方")
+    st.write("1. 質問を入力欄に入力してください")
+    st.write("2. 自動的に関連する文書を検索し、回答を生成します")
+    st.write("3. 参照文書は折りたたみ形式で表示されます")
