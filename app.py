@@ -6,11 +6,11 @@ from langchain_openai import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_pinecone import PineconeVectorStore
 from dotenv import load_dotenv
-import pdfplumber
 from pinecone import Pinecone, ServerlessSpec
 from add_documents import initialize_vectorstore
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+from langchain.schema import Document
 
 # .envファイルを読み込む
 load_dotenv()
@@ -41,7 +41,7 @@ retriever = vector_store.as_retriever()
 st.set_page_config(page_title="耐火基準エキスパート", layout="wide")
 
 # Streamlit UI
-st.title("RAG Chatbot")
+st.title("耐火基準エキスパート")
 st.write("質問を入力してください。")
 
 # ユーザーからの入力を取得
@@ -55,10 +55,10 @@ if user_input:
     # ストリーミングハンドラーの設定
     stream_handler = StreamHandler(answer_placeholder)
     
-    # QAチェーンの作成
+    # QAチェーンの生成
     qa_chain = RetrievalQA.from_chain_type(
         llm=ChatOpenAI(
-            model_name="gpt-4",
+            model_name="gpt-4o",
             temperature=0,
             streaming=True,
             callbacks=[stream_handler]
@@ -74,12 +74,31 @@ if user_input:
     # 参照された文書を表示
     st.markdown("### 参照文書")
     for i, doc in enumerate(response['source_documents'], 1):
-        with st.expander(f"参照文書 {i}"):
-            st.markdown(f"""
-            ```text
-            {doc.page_content[:500] + "..." if len(doc.page_content) > 500 else doc.page_content}
-            ```
-            """)
+        filename = doc.metadata.get('filename', 'Unknown file')
+        page = doc.metadata.get('page', 'N/A')
+        
+        with st.expander(f"参照文書 {i} - {filename} (ページ: {page})"):
+            st.markdown(f"**ファイル名**: {filename}")
+            st.markdown(f"**ページ**: {page}")
+            
+            st.markdown("**参照箇所の内容**:")
+            st.text_area(
+                label="",
+                value=doc.page_content,
+                height=200,  # 高さを調整可能
+                disabled=True  # 編集不可に設定
+            )
+            
+            # PDFファイルのパスを構築
+            pdf_path = f"pdfs/{filename}"
+            
+            # PDFファイルが存在する場合、新しいタブで開くリンクを表示（2種類）
+            if os.path.exists(pdf_path):
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.markdown(f'<a href="/pdfs/{filename}" target="_blank">PDFを新しいタブで開く(機能未実装)</a>', unsafe_allow_html=True)
+                with col2:
+                    st.markdown(f'<a href="/pdfs/{filename}#page={page}" target="_blank">該当ページを新しいタブで開く(機能未実装)</a>', unsafe_allow_html=True)
 
 # サイドバーに使い方の説明を追加
 with st.sidebar:
@@ -98,5 +117,6 @@ with st.sidebar:
     #### 例えば...
     - 「避難階段の必要な条件を教えてください」
     - 「最上階から数えた階数が12の階の床は炎にどれだけ耐えればいいですか？」
+    - 「鉄筋コンクリートの柱の構造規定を教えてください」
     
     """)
