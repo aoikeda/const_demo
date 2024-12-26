@@ -1,0 +1,2 @@
+add_documents.py…pdfフォルダに入っているpdfを全てPineconeに入れるようのファイル
+app.py…streamlitを用いてUIを作るためのファイル
